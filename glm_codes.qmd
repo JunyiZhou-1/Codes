@@ -1,0 +1,132 @@
+---
+title: "GLM Notes"
+format: html
+editor: visual
+---
+
+# GLM
+
+## Brief Introduction
+
+GLM is the abbreviation of "generalized linear models". GLM function offer a lot of linear models using different assumptions to realize different goals.
+
+## Different GLM models
+
+1.  Linear Regression (Gaussian)\
+    model_gaussian \<- glm(y \~ x1 + x2, family = gaussian(link = "identity"), data = data)\
+2.  Logistic Regression (Binomial) model_logistic \<- glm(y \~ x1 + x2, family = binomial(link = "logit"), data = data)\
+3.  Poisson Regression (Poisson)\
+    model_poisson \<- glm(y \~ x1 + x2, family = poisson(link = "log"), data = data)\
+4.  Gamma Regression (Gamma)\
+    model_gamma \<- glm(y \~ x1 + x2, family = Gamma(link = "log"), data = data)
+5.  Inverse Gaussian Regression (Inverse Gaussian)\
+    model_inv_gaussian \<- glm(y \~ x1 + x2, family = inverse.gaussian(link = "1/mu\^2"), data = data)\
+6.  Quasi-binomial\
+    model_quasi_binomial \<- glm(y \~ x1 + x2, family = quasibinomial(link = "logit"), data = data)\
+7.  Quasi-poisson\
+    model_quasi_poisson \<- glm(y \~ x1 + x2, family = quasipoisson(link = "log"), data = data)
+
+## Real examples using logistic Regression
+
+```{r chunk1}
+require(ISLR)
+names(Smarket)
+glm.fit=glm(Direction~Lag1+Lag2+Lag3+Lag4+Lag5+Volume,
+            data=Smarket,family=binomial)
+# family = binomial：指定逻辑回归模型(logistic regression).
+summary(glm.fit)
+glm.probs=predict(glm.fit,type="response")
+# type="response"：指定输出类型为预测概率。在逻辑回归模型中，这将返回每个样本属于响应变量类别 1 的概率。
+glm.pred=ifelse(glm.probs>0.5,"Up","Down") # do the classification
+attach(Smarket)
+table(glm.pred,Direction) #On the diagonal, we make the correct prediction
+mean(glm.pred==Direction) 
+```
+
+## Deviance
+
+### Classification
+
+1.  Null Deviance\
+    Definition: Null deviance measures how well the response variable is predicted by a model that includes only the intercept (i.e., no predictors).\
+    Purpose: It serves as a baseline for comparison with the full model.\
+    Calculation: It is calculated by comparing the fitted model (with only the intercept) to a saturated model (a model with a parameter for each observation).\
+    Interpretation: A higher null deviance indicates that the model with only the intercept does not fit the data well.\
+2.  Residual Deviance\
+    Definition: Residual deviance measures how well the response variable is predicted by the full model that includes the predictors\
+    Purpose: It shows the goodness of fit for the model with predictors.\
+    Calculation: It is calculated by comparing the fitted model (with predictors) to the saturated model.\
+    Interpretation: A lower residual deviance indicates that the model with predictors fits the data better.\
+
+### Codes
+
+```{r chunk2}
+data <- data.frame(
+  y = c(0, 1, 0, 1, 0, 1, 1, 0, 1, 0),
+  x1 = c(2, 3, 1, 4, 2, 5, 3, 2, 4, 1),
+  x2 = c(5, 6, 7, 8, 5, 6, 7, 8, 5, 6)
+)
+
+# Fit logistic regression model
+model <- glm(y ~ x1 + x2, family = binomial(link = "logit"), data = data)
+summary(model)
+# 获取原始偏差
+null_deviance <- model$null.deviance
+
+# 获取残差偏差
+residual_deviance <- model$deviance
+
+# 获取自由度
+df_null <- model$df.null
+df_residual <- model$df.residual
+
+# 计算偏差的变化
+deviance_difference <- null_deviance - residual_deviance
+
+# 计算自由度的变化
+df_difference <- df_null - df_residual
+
+# 进行卡方检验
+p_value <- 1 - pchisq(deviance_difference, df_difference)
+# pchisq(q, df) is a function in R that computes the cumulative distribution function (CDF) of the chi-square distribution
+p_value
+```
+
+# ggplot2
+
+## Basic Grammar
+
+Data: The dataset you want to visualize.\
+Aesthetics (aes): Mappings between data variables and visual properties (e.g., x and y positions, color, size).\
+Geometries (geom): The geometric shapes that represent data points (e.g., points, lines, bars).\
+Facets: A way to split data into subplots based on one or more variables.\
+Scales: Control how data values are mapped to visual properties.\
+Coordinate systems: Define the space in which the data is drawn.\
+Themes: Control the non-data ink elements like titles, labels, and background.\
+
+## Examples
+
+This is the basic format:
+
+```{r chunk3}
+library(ggplot2)
+# 使用内置的'mtcars'数据集
+data(mtcars)
+# 基本散点图
+ggplot(data = mtcars, aes(x = wt, y = mpg)) +
+geom_point()
+```
+
+If we want to enhance the picture, we can do the following changes
+
+```{r chunk4}
+library(ggplot2)
+ggplot(data = mtcars, aes(x = wt, y = mpg)) +
+  geom_point(aes(color = factor(cyl))) +
+  geom_line(color = "purple", linetype = "dashed", size = 1)+
+  labs(title = "MPG与重量的散点图",
+       x = "重量（1000磅）",
+       y = "每加仑英里数",
+       color = "气缸数") +
+  theme_minimal()
+```
